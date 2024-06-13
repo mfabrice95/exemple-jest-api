@@ -7,6 +7,7 @@ const { Op, where } = require("sequelize");
 const Article = require("../../models/Boutique/Article");
 const ArtilceUpload = require("../../class/uploads/ArticleUpload");
 const IMAGES_DESTINATIONS = require("../../constants/IMAGES_DESTINATIONS");
+const sendMail = require("../../utils/sendMail");
 
 const createArticle = async (req, res) => {
   try {
@@ -87,6 +88,14 @@ const createArticle = async (req, res) => {
       httpStatus: RESPONSE_STATUS.CREATED,
       message: "Article créée avec succès",
       result: result,
+    });
+
+    // envoi d'un mail lorsque l'article a été enregistré
+    const sujet = "Boutique - Confirmation article";
+    const EMAIL = "tony@mediabox.bi";
+    await sendMail({ to: EMAIL, sujet }, "confirm_article", {
+      NAME_ARTICLE,
+      PRICE
     });
   } catch (error) {
     console.log(error);

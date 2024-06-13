@@ -35,14 +35,14 @@ const sendMail = async (mailOptions, templateName, plainText, data) => {
                               const withInlineStyle = juice(html)
           
                               return await transporter.sendMail({
-                                        from: 'wasili@mediabox.bi',
+                                        from: 'poutine@mediabox.bi',
                                         html: withInlineStyle,
                                         text,
                                         ...mailOptions
                               })
                     } else if(plainText) {
                               return await transporter.sendMail({
-                                        from: 'wasili@mediabox.bi',
+                                        from: 'vladmir@mediabox.bi',
                                         text: plainText,
                                         ...mailOptions
                               })
