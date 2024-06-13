@@ -11,7 +11,7 @@ const IMAGES_DESTINATIONS = require("../../constants/IMAGES_DESTINATIONS");
 const createArticle = async (req, res) => {
   try {
     const { ID_CATEGORY, NAME_ARTICLE, PRICE } = req.body;
-    const { IMAGE } = req.files;
+    const { IMAGE } = req.files || {};
 
     const data = { ...req.body, ...req.files };
 
@@ -267,7 +267,7 @@ const updateArticle = async (req, res) => {
     const { ID_ARTICLE } = req.params;
     const { ID_CATEGORY, NAME_ARTICLE, PRICE } = req.body;
 
-    const { IMAGE } = req.files;
+    const { IMAGE } = req.files || {};
     const data = { ...req.body, ...req.files };
 
     const validation = new Validation(
