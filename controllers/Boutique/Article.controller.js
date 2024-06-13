@@ -5,11 +5,16 @@ const Category = require("../../models/Boutique/Category");
 const Validation = require("../../class/Validation");
 const { Op, where } = require("sequelize");
 const Article = require("../../models/Boutique/Article");
+const ArtilceUpload = require("../../class/uploads/ArticleUpload");
+const IMAGES_DESTINATIONS = require("../../constants/IMAGES_DESTINATIONS");
 
 const createArticle = async (req, res) => {
   try {
     const { ID_CATEGORY, NAME_ARTICLE, PRICE } = req.body;
-    const data = { ...req.body };
+    const { IMAGE } = req.files;
+
+    const data = { ...req.body, ...req.files };
+
     const validation = new Validation(
       data,
       {
@@ -25,6 +30,7 @@ const createArticle = async (req, res) => {
         PRICE: {
           required: true,
         },
+        IMAGE: { required: true, image: 2000000 },
       },
       {
         ID_CATEGORY: {
@@ -39,6 +45,10 @@ const createArticle = async (req, res) => {
         PRICE: {
           required: "Ce champ est obligatoire",
         },
+        IMAGE: {
+          required: "Ce champ est obligatoire",
+          image: "Ne doit pas dépasser 2MO ",
+        },
       }
     );
 
@@ -51,7 +61,27 @@ const createArticle = async (req, res) => {
         result: errors,
       });
     }
-    const result = await Article.create({ ID_CATEGORY, NAME_ARTICLE, PRICE });
+
+    // import de la classe qui va uploader l'image de l'article
+    const articleUpload = new ArtilceUpload();
+    var filename; // va afficher le nom de l'image uploadée
+
+    if (IMAGE) {
+      const { fileInfo: fileInfo_1, thumbInfo: thumbInfo_1 } =
+        await articleUpload.upload(IMAGE, false);
+      filename = fileInfo_1;
+    }
+
+    const result = await Article.create({
+      ID_CATEGORY,
+      NAME_ARTICLE,
+      PRICE,
+      IMAGE: filename
+        ? `${req.protocol}://${req.get("host")}/${
+            IMAGES_DESTINATIONS.articles
+          }/${filename?.fileName}`
+        : null,
+    });
     res.status(RESPONSE_CODES.CREATED).json({
       statusCode: RESPONSE_CODES.CREATED,
       httpStatus: RESPONSE_STATUS.CREATED,
@@ -236,7 +266,10 @@ const updateArticle = async (req, res) => {
   try {
     const { ID_ARTICLE } = req.params;
     const { ID_CATEGORY, NAME_ARTICLE, PRICE } = req.body;
-    const data = { ...req.body };
+
+    const { IMAGE } = req.files;
+    const data = { ...req.body, ...req.files };
+
     const validation = new Validation(
       data,
       {
@@ -252,6 +285,9 @@ const updateArticle = async (req, res) => {
         PRICE: {
           required: true,
         },
+        IMAGE: {
+          image: 2000000,
+        },
       },
       {
         ID_CATEGORY: {
@@ -266,6 +302,7 @@ const updateArticle = async (req, res) => {
         PRICE: {
           required: "Ce champ est obligatoire",
         },
+        IMAGE: { image: "Ne doit pas dépasser 2M0" },
       }
     );
 
@@ -278,8 +315,31 @@ const updateArticle = async (req, res) => {
         result: errors,
       });
     }
+
+    // on va l'utiliser pour recuperer l'image actuelle
+    const currentArticle = await Article.findByPk(ID_ARTICLE, {
+      attributes: ["IMAGE"],
+    });
+
+    // import de la classe qui va uploader l'image de l'article
+    const articleUpload = new ArtilceUpload();
+    var filename; // va afficher le nom de l'image uploadée
+
+    // Si l'image est modifiée
+    if (IMAGE) {
+      const { fileInfo } = await articleUpload.upload(IMAGE, false);
+      filename = `${req.protocol}://${req.get("host")}/${
+        IMAGES_DESTINATIONS.articles
+      }/${fileInfo.fileName}`;
+    }
+
     const result = await Article.update(
-      { ID_CATEGORY, NAME_ARTICLE, PRICE },
+      {
+        ID_CATEGORY,
+        NAME_ARTICLE,
+        PRICE,
+        IMAGE: filename ? filename : currentArticle?.IMAGE,
+      },
       {
         where: { ID_ARTICLE: ID_ARTICLE },
       }

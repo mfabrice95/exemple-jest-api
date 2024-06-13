@@ -23,6 +23,11 @@ const Article = sequelize.define(
       type: DataTypes.FLOAT,
       allowNull: false,
     },
+    IMAGE: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: null,
+    },
     CREATED_AT: {
       type: DataTypes.DATE,
       allowNull: false,
