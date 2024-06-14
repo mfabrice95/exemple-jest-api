@@ -3,11 +3,12 @@ const RESPONSE_CODES = require("../../constants/RESPONSE_CODES");
 const RESPONSE_STATUS = require("../../constants/RESPONSE_STATUS");
 const Category = require("../../models/Boutique/Category");
 const Validation = require("../../class/Validation");
-const { Op, where } = require("sequelize");
+const { Op, where, QueryTypes } = require("sequelize");
 const Article = require("../../models/Boutique/Article");
 const ArtilceUpload = require("../../class/uploads/ArticleUpload");
 const IMAGES_DESTINATIONS = require("../../constants/IMAGES_DESTINATIONS");
 const sendMail = require("../../utils/sendMail");
+const sequelize = require("../../utils/sequerize");
 
 const createArticle = async (req, res) => {
   try {
@@ -95,7 +96,7 @@ const createArticle = async (req, res) => {
     const EMAIL = "tony@mediabox.bi";
     await sendMail({ to: EMAIL, sujet }, "confirm_article", {
       NAME_ARTICLE,
-      PRICE
+      PRICE,
     });
   } catch (error) {
     console.log(error);
@@ -370,10 +371,86 @@ const updateArticle = async (req, res) => {
   }
 };
 
+// by using sql query
+const getArticlesByCategory1 = async (req, res) => {
+  try {
+    const result = await sequelize.query(
+      `SELECT category.ID_CATEGORY,category.DESIGNATION as name,COUNT(article.ID_CATEGORY) as nbr  FROM article join category on article.ID_CATEGORY=category.ID_CATEGORY WHERE 1 GROUP by category.ID_CATEGORY,category.DESIGNATION`,
+      { nest: true, type: QueryTypes.SELECT }
+    );
+
+    const totalRecords = result.length;
+
+    res.status(RESPONSE_CODES.OK).json({
+      statusCode: RESPONSE_CODES.OK,
+      httpStatus: RESPONSE_STATUS.OK,
+      message: "Liste des articles",
+      result: {
+        result,
+        totalRecords,
+      },
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(RESPONSE_CODES.INTERNAL_SERVER_ERROR).json({
+      statusCode: RESPONSE_CODES.INTERNAL_SERVER_ERROR,
+      httpStatus: RESPONSE_STATUS.INTERNAL_SERVER_ERROR,
+      message: "Erreur interne du serveur, réessayer plus tard",
+    });
+  }
+};
+
+// get articles details by category
+const allArticlesByCategory = async (req, res) => {
+  try {
+    const { ID_CATEGORY } = req.params;
+    const article = await Article.findAll({
+      include: { model: Category, as: "category" },
+      where: { ID_CATEGORY: ID_CATEGORY },
+    });
+    if (article) {
+      res.status(RESPONSE_CODES.OK).json({
+        statusCode: RESPONSE_CODES.OK,
+        httpStatus: RESPONSE_STATUS.OK,
+        message: "Article trouvé",
+        result: article,
+      });
+    } else {
+      res.status(RESPONSE_CODES.NOT_FOUND).json({
+        statusCode: RESPONSE_CODES.NOT_FOUND,
+        httpStatus: RESPONSE_STATUS.NOT_FOUND,
+        message: "L'article non trouvé",
+      });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(RESPONSE_CODES.INTERNAL_SERVER_ERROR).json({
+      statusCode: RESPONSE_CODES.INTERNAL_SERVER_ERROR,
+      httpStatus: RESPONSE_STATUS.INTERNAL_SERVER_ERROR,
+      message: "Erreur interne du serveur, réessayer plus tard",
+    });
+  }
+};
+
+// by models
+const getArticlesByCategory2 = (req, res) => {
+  try {
+  } catch (error) {
+    console.log(error);
+    res.status(RESPONSE_CODES.INTERNAL_SERVER_ERROR).json({
+      statusCode: RESPONSE_CODES.INTERNAL_SERVER_ERROR,
+      httpStatus: RESPONSE_STATUS.INTERNAL_SERVER_ERROR,
+      message: "Erreur interne du serveur, réessayer plus tard",
+    });
+  }
+};
+
 module.exports = {
   createArticle,
   findAllArticle,
   findOneArticle,
   deleteArticle,
   updateArticle,
+  getArticlesByCategory1,
+  allArticlesByCategory
 };

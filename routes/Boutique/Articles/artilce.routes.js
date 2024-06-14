@@ -43,4 +43,10 @@ article_routes.post("/delete", article_controller.deleteArticle);
 
 article_routes.put("/update/:ID_ARTICLE", article_controller.updateArticle);
 
+
+article_routes.get("/by_category", article_controller.getArticlesByCategory1);
+
+
+article_routes.get("/all_categories/:ID_CATEGORY", article_controller.allArticlesByCategory);
+
 module.exports = article_routes;
